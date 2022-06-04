@@ -1,24 +1,31 @@
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:instagram/resources/auth_methods.dart';
 import 'package:instagram/responsive/mobile_screen_layout.dart';
 import 'package:instagram/responsive/responsive_layout_screen.dart';
 import 'package:instagram/responsive/web_screen_layout.dart';
-import 'package:instagram/screens/signup_screen.dart';
+import 'package:instagram/screens/login_screen.dart';
 import 'package:instagram/utils/colors.dart';
 import 'package:instagram/utils/utils.dart';
 import 'package:instagram/widgets/text_field_input.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({Key? key}) : super(key: key);
+class SignupScreen extends StatefulWidget {
+  const SignupScreen({Key? key}) : super(key: key);
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<SignupScreen> createState() => _SignupScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _SignupScreenState extends State<SignupScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _bioController = TextEditingController();
+  final TextEditingController _usernameController = TextEditingController();
+  File? _image;
   bool _isLoading = false;
 
   @override
@@ -26,18 +33,37 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _bioController.dispose();
+    _usernameController.dispose();
   }
 
-  void loginUser() async {
+  void selectImage() async {
+    var imageFileList = await pickImage(ImageSource.gallery);
+    setState(() {
+      _image = imageFileList;
+    });
+  }
+
+  void signUpUser() async {
     setState(() {
       _isLoading = true;
     });
-    String res = await AuthMethods().loginUser(
-        email: _emailController.text, password: _passwordController.text);
+    String res = await AuthMethods().signUpUser(
+      username: _usernameController.text,
+      email: _emailController.text,
+      password: _passwordController.text,
+      bio: _bioController.text,
+      file: _image!,
+    );
 
-    if (res == 'success') {
+    setState(() {
+      _isLoading = false;
+    });
+
+    if (res != 'success') {
       // ignore: use_build_context_synchronously
       showSnackBar(res, context);
+    } else {
       // ignore: use_build_context_synchronously
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
@@ -47,20 +73,13 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
       );
-    } else {
-      // ignore: use_build_context_synchronously
-      showSnackBar(res, context);
     }
-
-    setState(() {
-      _isLoading = false;
-    });
   }
 
-  void navigateToSignup() {
+  void navigateToLogin() {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => const SignupScreen(),
+        builder: (context) => const LoginScreen(),
       ),
     );
   }
@@ -81,22 +100,59 @@ class _LoginScreenState extends State<LoginScreen> {
                 color: primaryColor,
                 height: 64,
               ),
-              const SizedBox(height: 64),
+              const SizedBox(height: 20),
+              Stack(
+                children: <Widget>[
+                  _image != null
+                      ? CircleAvatar(
+                          radius: 64,
+                          child: kIsWeb
+                              ? Image.network(_image!.path)
+                              : Image.file(File(_image!.path)),
+                        )
+                      : const CircleAvatar(
+                          radius: 64,
+                          backgroundImage: NetworkImage(
+                              "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460__480.png"),
+                        ),
+                  Positioned(
+                    bottom: -10,
+                    left: 80,
+                    child: IconButton(
+                      onPressed: selectImage,
+                      icon: const Icon(Icons.add_a_photo),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              TextFieldInput(
+                hintText: "Username",
+                textInputType: TextInputType.text,
+                textEditingController: _usernameController,
+              ),
+              const SizedBox(height: 20),
               TextFieldInput(
                 hintText: "Email",
                 textInputType: TextInputType.emailAddress,
                 textEditingController: _emailController,
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
               TextFieldInput(
                 hintText: "Password",
                 textInputType: TextInputType.text,
                 textEditingController: _passwordController,
                 isPass: true,
               ),
+              const SizedBox(height: 20),
+              TextFieldInput(
+                hintText: "Bio",
+                textInputType: TextInputType.text,
+                textEditingController: _bioController,
+              ),
               const SizedBox(height: 24),
               InkWell(
-                onTap: loginUser,
+                onTap: signUpUser,
                 child: Container(
                   width: double.infinity,
                   alignment: Alignment.center,
@@ -110,16 +166,12 @@ class _LoginScreenState extends State<LoginScreen> {
                     color: blueColor,
                   ),
                   child: _isLoading
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: Center(
-                            child: CircularProgressIndicator(
-                              color: primaryColor,
-                            ),
+                      ? const Center(
+                          child: LinearProgressIndicator(
+                            color: primaryColor,
                           ),
                         )
-                      : const Text("Login"),
+                      : const Text("Signup"),
                 ),
               ),
               const SizedBox(height: 12),
@@ -129,14 +181,14 @@ class _LoginScreenState extends State<LoginScreen> {
                 children: [
                   Container(
                     padding: const EdgeInsets.symmetric(vertical: 8),
-                    child: const Text("Dont have an account?"),
+                    child: const Text("Do you have an account?"),
                   ),
                   GestureDetector(
-                    onTap: navigateToSignup,
+                    onTap: navigateToLogin,
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 8),
                       child: const Text(
-                        " Sign up",
+                        " Login",
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                         ),
