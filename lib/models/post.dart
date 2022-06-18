@@ -24,7 +24,7 @@ class Post {
   Map<String, dynamic> toJson() => {
         "email": description,
         "uid": uid,
-        "photoUrl": postId,
+        "postId": postId,
         "username": username,
         "datePublished": datePublished,
         "postUrl": postUrl,
@@ -36,9 +36,9 @@ class Post {
     var snapshot = snap.data() as Map<String, dynamic>;
 
     return Post(
-      description: snapshot['email'],
+      description: snapshot['description'],
       uid: snapshot['uid'],
-      postId: snapshot['photoUrl'],
+      postId: snapshot['postId'],
       username: snapshot['username'],
       datePublished: snapshot['datePublished'],
       postUrl: snapshot['postUrl'],
